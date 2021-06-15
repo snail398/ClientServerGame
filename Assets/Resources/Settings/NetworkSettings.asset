@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: NetworkSettings
   m_EditorClassIdentifier: 
   Settings:
-    LaunchType: 1
+    LaunchType: 0
     Ping: 100
-    PacketLossPercentage: 0
+    PacketLossPercentage: 20
     ServerUpdatePerSeconds: 20
-    UseBot: 0

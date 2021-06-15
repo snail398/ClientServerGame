@@ -7,6 +7,7 @@ using Client.Spawn;
 using Common;
 using Shared;
 using Shared.NetMessages;
+using Shared.Settings;
 using UnityEngine;
 using Zenject;
 
@@ -15,17 +16,19 @@ namespace Client {
 
         private readonly InputService _InputService;
         private readonly ICoroutineExecutor _CoroutineExecutor;
+        private readonly SettingsService _SettingsService;
         
         private readonly Dictionary<int, GameObject> _Players = new Dictionary<int, GameObject>();
         private GameObject _LocalPlayer;
-        private int _LocalPlayerId = 0;
         private readonly Dictionary<int, Vector3[]> _PlayersStateBuffers = new Dictionary<int, Vector3[]>();
         private readonly Dictionary<int, Coroutine> _InterpolateCoroutines = new Dictionary<int, Coroutine>();
         private uint _LastReceivedMessageCount;
+        private NetworkSettings _NetworkSettings;
         
-        public MoveClientService(SignalBus signalBus, InputService inputService, ICoroutineExecutor coroutineExecutor) : base(signalBus) {
+        public MoveClientService(SignalBus signalBus, InputService inputService, ICoroutineExecutor coroutineExecutor, SettingsService settingsService) : base(signalBus) {
             _InputService = inputService;
             _CoroutineExecutor = coroutineExecutor;
+            _SettingsService = settingsService;
         }
         
         protected override void HandleMessage(NetGameState message) {
@@ -53,37 +56,54 @@ namespace Client {
                 _CoroutineExecutor.StopCoroutine(coroutine);
                 _InterpolateCoroutines[playerState.PlayerId] = null;
             }
-            _InterpolateCoroutines[playerState.PlayerId] = _CoroutineExecutor.StartCoroutine(InterpolatePosition(player, previousPosition, serverPosition));
+            player.transform.position = previousPosition;
+            _InterpolateCoroutines[playerState.PlayerId] = _CoroutineExecutor.StartCoroutine(InterpolatePosition(player, previousPosition, serverPosition, () => player.transform.position = serverPosition));
         }
 
-        private IEnumerator InterpolatePosition(GameObject player, Vector3 previousPosition, Vector3 serverPosition) {
-            player.transform.position = previousPosition;
-            var timeToInterpolate = (float) 1 / 20;
+        private IEnumerator InterpolatePosition(GameObject player, Vector3 previousPosition, Vector3 serverPosition, Action OnFinish) {
+            var timeToInterpolate = (float) 1 / _NetworkSettings.Settings.ServerUpdatePerSeconds;
             var step = (serverPosition - previousPosition).magnitude * Time.fixedDeltaTime / timeToInterpolate;
             while (timeToInterpolate > 0) {
                 timeToInterpolate -= Time.deltaTime;
                 player.transform.position += (serverPosition - previousPosition).normalized * step;
                 yield return new WaitForFixedUpdate();
             }
-            player.transform.position = serverPosition;
+            OnFinish?.Invoke();
         }
 
         private void LocalPlayerMove(PlayerState playerState) {
             //server reconstillation
             var serverPosition = new Vector3(playerState.Position.X, playerState.Position.Y, playerState.Position.Z);
             var player = _Players[playerState.PlayerId];
-            player.transform.position = serverPosition;
+            // player.transform.position = serverPosition;
+            var newPosition = serverPosition;
             for (var j = playerState.LastHandledCommand + 1; j < _InputService.CommandNumber; j++) {
                 var index = j % 1024;
-                player.transform.position +=
-                    new Vector3(_InputService.CommandBuffer[index].x, 0, _InputService.CommandBuffer[index].y) *
-                    Time.fixedDeltaTime;
+                newPosition += new Vector3(_InputService.CommandBuffer[index].x, 0, _InputService.CommandBuffer[index].y) *
+                               Time.fixedDeltaTime;
+                // player.transform.position +=
+                //     new Vector3(_InputService.CommandBuffer[index].x, 0, _InputService.CommandBuffer[index].y) *
+                //     Time.fixedDeltaTime;
+            }
+
+            if ((newPosition - player.transform.position).magnitude < 0.1f) {
+                player.transform.position = newPosition;
+            }
+            else {
+                Debug.LogError("LocalInterpolation");
+                if (_InterpolateCoroutines.TryGetValue(playerState.PlayerId, out var coroutine) ) {
+                    _CoroutineExecutor.StopCoroutine(coroutine);
+                    _InterpolateCoroutines[playerState.PlayerId] = null;
+                }
+                _InterpolateCoroutines[playerState.PlayerId] = _CoroutineExecutor.StartCoroutine(InterpolatePosition(player, player.transform.position, newPosition, () => {}));
+
             }
         }
 
         public void Initialize() {
             SignalBus.Subscribe<PlayerSpawnClientSignal>(OnPlayerSpawned, this);
             SignalBus.Subscribe<ApplyLocalInputSignal>(OnLocalInput, this);
+            _NetworkSettings = _SettingsService.GetSettings<NetworkSettings>();
         }
 
         private void OnLocalInput(ApplyLocalInputSignal obj) {
