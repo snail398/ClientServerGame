@@ -32,7 +32,7 @@ namespace Client {
             _LastReceivedMessageCount++;
             for (int i = 0; i < message.PlayerCount; i++) {
                 var playerState = message.PlayerStates[i];
-                if (playerState.PlayerId == 0) {
+                if (playerState.PlayerId == message.LocalId) {
                     LocalPlayerMove(playerState);
                 }
                 else {
@@ -87,13 +87,14 @@ namespace Client {
         }
 
         private void OnLocalInput(ApplyLocalInputSignal obj) {
+            //move prediction
             _LocalPlayer.transform.position += new Vector3(obj.DirectionX, 0, obj.DirectionY) * Time.fixedDeltaTime;
         }
 
         private void OnPlayerSpawned(PlayerSpawnClientSignal obj) {
             _Players.Add(obj.PlayerId, obj.Player);
             _PlayersStateBuffers.Add(obj.PlayerId, new Vector3[1024]);
-            if (obj.PlayerId == 0) {
+            if (obj.IsLocal) {
                 _LocalPlayer = obj.Player;
             }
         }

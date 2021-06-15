@@ -18,8 +18,7 @@ namespace Server {
             Container.Bind(typeof(ScoreServerService), typeof(IGameStateProvider<List<ScoreState>>),typeof(IInitializable), typeof(IDisposable)).To<ScoreServerService>().AsSingle();
             Container.Bind(typeof(GameFlowServerService), typeof(IGameStateProvider<bool>),typeof(IInitializable), typeof(IDisposable)).To<GameFlowServerService>().AsSingle();
             Container.Bind(typeof(SynchronizationServerService), typeof(IInitializable), typeof(IDisposable)).To<SynchronizationServerService>().AsSingle();
-            Container.Bind(typeof(BotService), typeof(IInitializable), typeof(IDisposable)).To<BotService>().AsSingle();
-
+            // Container.Bind(typeof(BotService), typeof(IInitializable), typeof(IDisposable)).To<BotService>().AsSingle();
         }
     }
 }

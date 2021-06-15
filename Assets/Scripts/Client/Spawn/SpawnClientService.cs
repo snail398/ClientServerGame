@@ -19,18 +19,19 @@ namespace Client.Spawn {
             for (int i = 0; i < message.PlayerCount; i++) {
                 var playerState = message.PlayerStates[i];
                 if (!_SpawnedPlayers.Contains(playerState.PlayerId)) {
-                    SpawnPlayer(playerState);
+                    var isLocal = playerState.PlayerId == message.LocalId; 
+                    SpawnPlayer(playerState, isLocal);
                     _SpawnedPlayers.Add(playerState.PlayerId);
                 }
             }
         }
 
-        private void SpawnPlayer(PlayerState playerState) {
-            string prefabPath = playerState.PlayerId == 0 ? "Prefabs/Player" : "Prefabs/EnemyPlayer";
+        private void SpawnPlayer(PlayerState playerState, bool isLocal) {
+            string prefabPath = isLocal ? "Prefabs/Player" : "Prefabs/EnemyPlayer";
             var serverPlayerPrefab = _ResourceLoaderService.LoadResource<GameObject>(prefabPath);
             var spawnPosition = new Vector3(playerState.Position.X, playerState.Position.Y, playerState.Position.Z);
             var player = Object.Instantiate(serverPlayerPrefab, spawnPosition, Quaternion.identity);
-            SignalBus.FireSignal(new PlayerSpawnClientSignal(player, playerState.PlayerId));
+            SignalBus.FireSignal(new PlayerSpawnClientSignal(player, playerState.PlayerId, isLocal));
         }
 
         public void Initialize() {

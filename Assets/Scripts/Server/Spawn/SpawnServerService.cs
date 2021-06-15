@@ -56,13 +56,6 @@ namespace Shared.Spawn {
             player.Init(id);
             return player;
         }
-        
-        private void SpawnBot() {
-            var player = SpawnPlayer(1);
-            var spawnPosition = player.transform.position;
-            _SignalBus.FireSignal(new BroadcastMessageSignal(new NetSpawnPlayer(1, spawnPosition.x, spawnPosition.y, spawnPosition.z)));
-            _SignalBus.FireSignal(new PlayerSpawnedServerSignal(player, 1));
-        }
 
         public void Dispose() {
             _SignalBus.UnSubscribeFromAll(this);

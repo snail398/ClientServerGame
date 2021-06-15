@@ -5,6 +5,7 @@ using Unity.Networking.Transport;
 
 namespace Shared.NetMessages {
     public class NetGameState : NetMessage {
+        public int LocalId;
         public bool GameActive;
         public int PlayerCount;
         public List<PlayerState> PlayerStates;
@@ -93,6 +94,8 @@ namespace Shared.NetMessages {
                 };
                 CoinStates.Add(coinState);
             }
+
+            LocalId = reader.ReadInt();
         }
     }
 }

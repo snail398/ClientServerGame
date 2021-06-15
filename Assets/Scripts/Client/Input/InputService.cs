@@ -15,6 +15,7 @@ namespace Client.Input {
         public Vector2 MoveDirection;
         private uint _CommandNumber;
         private Vector2[] _CommandBuffer = new Vector2[1024];
+        private int _LocalId;
 
         public Vector2[] CommandBuffer => _CommandBuffer;
 
@@ -26,7 +27,8 @@ namespace Client.Input {
         }
 
         private void OnPlayerSpawn(PlayerSpawnClientSignal obj) {
-            if (obj.PlayerId == 0) {
+            if (obj.IsLocal) {
+                _LocalId = obj.PlayerId;
                 _UnityEventProvider.OnUpdate += Update;
                 _UnityEventProvider.OnFixedUpdate += FixedUpdate;
             }
@@ -43,7 +45,7 @@ namespace Client.Input {
         }
 
         private void FixedUpdate() {
-            _SignalBus.FireSignal(new SendMessageToServerSignal(new NetInputMessage(0, _CommandNumber, MoveDirection.x, MoveDirection.y)));
+            _SignalBus.FireSignal(new SendMessageToServerSignal(new NetInputMessage(_LocalId, _CommandNumber, MoveDirection.x, MoveDirection.y)));
             _SignalBus.FireSignal(new ApplyLocalInputSignal(MoveDirection.x, MoveDirection.y));
             _CommandBuffer[_CommandNumber % 1024] = MoveDirection;
             _CommandNumber++;

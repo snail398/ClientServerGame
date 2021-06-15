@@ -15,5 +15,6 @@ MonoBehaviour:
   Settings:
     LaunchType: 1
     Ping: 100
-    PacketLossPercentage: 20
+    PacketLossPercentage: 0
     ServerUpdatePerSeconds: 20
+    UseBot: 0

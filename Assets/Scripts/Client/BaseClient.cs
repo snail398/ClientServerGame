@@ -65,7 +65,7 @@ namespace Client {
                         Connection = default;
                         break;
                     case NetworkEvent.Type.Connect:
-                        Debug.Log("You are connected to server");
+                        Debug.Log($"You are connected to server");
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();

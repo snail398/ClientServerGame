@@ -134,6 +134,7 @@ namespace Server {
             DataStreamWriter writer;
             _NetworkDriver.BeginSend(_NetworkPipeline, connection, out writer);
             message.Serialize(ref writer);
+            writer.WriteInt(connection.InternalId);
             _NetworkDriver.EndSend(writer);
         }
 

@@ -23,9 +23,9 @@ namespace Server {
         private void OnClientConnected(NetworkConnection obj) {
             Debug.LogError($"connected with id {obj.InternalId}");
             _SignalBus.FireSignal(new ClientConnectedSignal(obj.InternalId));
-
-            //bot
-            _SignalBus.FireSignal(new ClientConnectedSignal(1));
+            //
+            // //bot
+            // _SignalBus.FireSignal(new ClientConnectedSignal(1));
 
         }
 
